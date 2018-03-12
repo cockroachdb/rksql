@@ -77,6 +77,6 @@ for package in rubrik_packages:
         print '==='
         raise Exception(
             'Formatting check failed. Run `goimports -local rubrik -w '
-            '$SDMAIN/src/go/src/rubrik/%s`' % package)
+            '$PROJECT_ROOT/src/go/src/rubrik/%s`' % package)
 
 print 'Go build done\n'

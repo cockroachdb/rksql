@@ -1,0 +1,36 @@
+[{
+  "name": "update_history",
+  "transaction": [
+    {
+      "query": "UPDATE sqload.files_sql__static SET internal_timestamp=$1, last_modifier=$2, history=$3 WHERE token__uuid=$4 AND uuid=$5 AND linearizer IS NULL",
+      "num_rows": 1
+    }
+  ],
+  "params": {
+    "generators": [
+      "internal_ts:3",
+      "last_modifier:4",
+      "history:2",
+      "stripe:1",
+      "uuid:0"
+    ]
+  },
+  "concurrency": 2,
+  "interval": "0s",
+  "latency_thresh": "2s"
+}, {
+  "name": "select_token_range",
+  "transaction": [
+    {
+      "query": "SELECT uuid FROM (SELECT uuid,token__uuid FROM sqload.files_sql WHERE token__uuid>$1 AND token__uuid<9223372036854775807) AS a JOIN (SELECT uuid,token__uuid FROM sqload.files_sql__static WHERE token__uuid>$1 AND token__uuid<9223372036854775807) AS b USING (token__uuid,uuid) LIMIT 1000"
+    }
+  ],
+  "params": {
+    "generators": [
+      "stripe:2"
+    ]
+  },
+  "concurrency": 1,
+  "interval": "10s",
+  "latency_thresh": "10s"
+}]

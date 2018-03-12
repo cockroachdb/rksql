@@ -1,0 +1,151 @@
+[{
+  "name": "populate_0",
+  "transaction": [
+    {
+      "query": "UPSERT INTO sqload.files_sql (birth_time,lock,parent_uuid_hint,stripe_id,stripe_metadata,token__uuid,uuid) VALUES ($1,'',$2,$3,$4,$5,$6)",
+      "result_name": "r1",
+      "num_rows": 1
+    },
+    {
+      "query": "UPSERT INTO sqload.files_sql__static (ctime,file_spec,internal_timestamp,last_modifier,metadata_version,mode,mtime,size,state,history,token__uuid,uuid) VALUES($7,$8, $9,$10,$11,$12,$13,$14,$15,$16, $5,$6)",
+      "num_rows": 1
+    }
+  ],
+  "params": {
+    "generators": [
+      "birth_time",
+      "parent_uuid_hint",
+      "stripe",
+      "stripe_metadata",
+      "stripe:1",
+      "uuid",
+
+      "ctime",
+      "file_spec",
+      "internal_ts",
+      "last_modifier",
+      "metadata_v",
+      "mode",
+      "mtime",
+      "size",
+      "state",
+      "history"
+    ]
+  },
+  "concurrency": 3,
+  "interval": "0s",
+  "latency_thresh": "1s"
+}, {
+  "name": "populate_9",
+  "transaction": [
+    {
+      "query": "UPSERT INTO sqload.files_sql (birth_time,lock,parent_uuid_hint,stripe_id,stripe_metadata,token__uuid,uuid) VALUES ($1,'',$2,$3,$4,$5,$6)",
+      "result_name": "r1",
+      "num_rows": 1
+    },
+    {
+      "query": "UPSERT INTO sqload.files_sql__static (ctime,file_spec,internal_timestamp,last_modifier,metadata_version,mode,mtime,size,state,history,token__uuid,uuid) VALUES($7,$8, $9,$10,$11,$12,$13,$14,$15,$16, $5,$6)",
+      "num_rows": 1
+    }
+  ],
+  "params": {
+    "generators": [
+      "birth_time:9",
+      "parent_uuid_hint:9",
+      "stripe_small:9",
+      "stripe_metadata:9",
+      "stripe",
+      "uuid_small:9",
+
+      "ctime:9",
+      "file_spec:9",
+      "internal_ts:9",
+      "last_modifier:9",
+      "metadata_v:9",
+      "mode:9",
+      "mtime:9",
+      "size:9",
+      "state:9",
+      "history:9"
+    ]
+  },
+  "concurrency": 3,
+  "interval": "0s",
+  "latency_thresh": "1s"
+}, {
+  "name": "map_populate_0",
+  "transaction": [
+    {
+      "query": "UPSERT INTO sqload.files_sql (stripe_id,token__uuid,uuid) VALUES ($1,$2,$3)",
+      "result_name": "r1",
+      "num_rows": 1
+    },
+    {
+      "query": "SELECT count(*) AS count FROM sqload.files_sql__static WHERE token__uuid=$2 AND uuid=$3 AND linearizer IS NULL",
+      "result_name": "r2",
+      "num_rows": 1
+    },
+    {
+      "query": "UPSERT INTO sqload.files_sql__child_map__map (stripe_id,token__uuid,uuid,map__key,map__val) VALUES ($1,$2,$3,$4,$5)",
+      "result_name": "r3",
+      "num_rows": 1
+    },
+    {
+      "query": "UPSERT INTO sqload.files_sql__child_map__map (stripe_id,token__uuid,uuid,map__key,map__val) VALUES ($1,$2,$3,$6,$7)",
+      "result_name": "r4",
+      "num_rows": 1
+    }
+  ],
+  "params": {
+    "generators": [
+      "stripe",
+      "stripe:1",
+      "uuid",
+      "child_map_key",
+      "uuid:1",
+      "child_map_key:1",
+      "uuid:2"
+    ]
+  },
+  "concurrency": 3,
+  "interval": "0s",
+  "latency_thresh": "1s"
+},  {
+  "name": "map_populate_9",
+  "transaction": [
+    {
+      "query": "UPSERT INTO sqload.files_sql (stripe_id,token__uuid,uuid) VALUES ($1,$2,$3)",
+      "result_name": "r1",
+      "num_rows": 1
+    },
+    {
+      "query": "SELECT count(*) AS count FROM sqload.files_sql__static WHERE token__uuid=$2 AND uuid=$3 AND linearizer IS NULL",
+      "result_name": "r2",
+      "num_rows": 1
+    },
+    {
+      "query": "UPSERT INTO sqload.files_sql__child_map__map (stripe_id,token__uuid,uuid,map__key,map__val) VALUES ($1,$2,$3,$4,$5)",
+      "result_name": "r3",
+      "num_rows": 1
+    },
+    {
+      "query": "UPSERT INTO sqload.files_sql__child_map__map (stripe_id,token__uuid,uuid,map__key,map__val) VALUES ($1,$2,$3,$6,$7)",
+      "result_name": "r4",
+      "num_rows": 1
+    }
+  ],
+  "params": {
+    "generators": [
+      "stripe_small:9",
+      "stripe",
+      "uuid_small:9",
+      "child_map_key:9",
+      "uuid",
+      "child_map_key",
+      "uuid:1"
+    ]
+  },
+  "concurrency": 3,
+  "interval": "0s",
+  "latency_thresh": "1s"
+}]

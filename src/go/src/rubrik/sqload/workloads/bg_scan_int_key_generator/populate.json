@@ -1,0 +1,20 @@
+[{
+  "name": "bg_scan_generator_int_keyed_insert",
+  "transaction": [
+    {
+      "query": "INSERT INTO sqload.bg_scan_generator_int_keyed (job_id, job_name, job_config, node_id) VALUES ($1, $2, $3, $4)",
+      "num_rows": 1
+    }
+  ],
+  "params": {
+    "generators": [
+      "int_job_id",
+      "str_200b",
+      "str_80kb",
+      "int_xxsmall"
+    ]
+  },
+  "concurrency": 6,
+  "interval": "0s",
+  "latency_thresh": "5s"
+}]

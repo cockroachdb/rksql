@@ -1,0 +1,15 @@
+[{
+  "name": "micro_benchmark_point_select_all",
+  "transaction": [{
+    "query": "SELECT * FROM sqload.micro_benchmark where job_id = $1",
+    "num_rows": 1
+  }],
+  "params": {
+    "generators": [
+      "int_job_id"
+    ]
+  },
+  "concurrency": 4,
+  "interval": "0s",
+  "latency_thresh": "250ms"
+}]

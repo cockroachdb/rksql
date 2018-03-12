@@ -1,0 +1,15 @@
+# Refer https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
+# for how to update this file.
+
+# Version fixed to v0.2.4 because v0.3.0 requires a more recent version of
+# thrift than what dep installs, and it does not seem possible to provide
+# constraints on transitive dependencies.
+[[constraint]]
+  name = "github.com/openzipkin/zipkin-go-opentracing"
+  version = "v0.2.4"
+
+# Version fixed to current tip of master to include fix for a swallowed
+# error that causes incomplete results to return as a success from gorm.
+[[constraint]]
+  name = "github.com/jinzhu/gorm"
+  revision = "0a51f6cdc55d1650d9ed3b4c13026cfa9133b01e"

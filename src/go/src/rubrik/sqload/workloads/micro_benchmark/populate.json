@@ -1,0 +1,36 @@
+[{
+  "name": "micro_benchmark_insert",
+  "transaction": [
+    {
+      "query": "INSERT INTO sqload.micro_benchmark (job_id, job_name, job_config, node_id) VALUES ($1,$2,$3,$4), ($5,$6,$7,$8), ($9,$10,$11,$12), ($13,$14,$15,$16), ($17,$18,$19,$20)",
+      "num_rows": 1
+    }
+  ],
+  "params": {
+    "generators": [
+      "int_job_id",
+      "str_200b",
+      "str_1kb",
+      "int_xxsmall",
+      "int_job_id:1",
+      "str_200b:1",
+      "str_1kb:1",
+      "int_xxsmall:1",
+      "int_job_id:2",
+      "str_200b:2",
+      "str_1kb:2",
+      "int_xxsmall:2",
+      "int_job_id:3",
+      "str_200b:3",
+      "str_1kb:3",
+      "int_xxsmall:3",
+      "int_job_id:4",
+      "str_200b:4",
+      "str_1kb:4",
+      "int_xxsmall:4"
+    ]
+  },
+  "concurrency": 6,
+  "interval": "0s",
+  "latency_thresh": "1s"
+}]

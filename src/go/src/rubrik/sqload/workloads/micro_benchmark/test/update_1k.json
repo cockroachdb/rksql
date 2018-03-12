@@ -1,0 +1,16 @@
+[{
+  "name": "micro_benchmark_point_update_job_config",
+  "transaction": [{
+    "query": "UPDATE sqload.micro_benchmark set job_config=$1 where job_id = $2",
+    "num_rows": 1
+  }],
+  "params": {
+    "generators": [
+      "str_80kb:2",
+      "int_job_id"
+    ]
+  },
+  "concurrency": 2,
+  "interval": "0s",
+  "latency_thresh": "5s"
+}]
