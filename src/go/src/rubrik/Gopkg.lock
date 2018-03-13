@@ -14,6 +14,12 @@
   revision = "0d8b4682f140f0fe486ef7e3d2f70665f3066906"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/codahale/hdrhistogram"
+  packages = ["."]
+  revision = "3a0bb77429bd3a61596f5e8a3172445844342120"
+
+[[projects]]
   name = "github.com/cyberdelia/go-metrics-graphite"
   packages = ["."]
   revision = "39f87cc3b432bbb898d7c643c0e93cac2bc865ad"
@@ -31,10 +37,27 @@
   revision = "553a641470496b2327abcac10b36396bd98e45c9"
 
 [[projects]]
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "064e2069ce9c359c118179501254f67d7d37ba24"
+  version = "0.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/hailocab/go-hostpool"
   packages = ["."]
   revision = "e80d13ce29ede4452c43dea11e79b9bc8a15b478"
+
+[[projects]]
+  name = "github.com/jinzhu/gorm"
+  packages = [".","dialects/postgres"]
+  revision = "0a51f6cdc55d1650d9ed3b4c13026cfa9133b01e"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/jinzhu/inflection"
+  packages = ["."]
+  revision = "1c35d901db3da928c72a72d8458480cc9ade058f"
 
 [[projects]]
   branch = "master"
@@ -45,7 +68,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/lib/pq"
-  packages = [".","oid"]
+  packages = [".","hstore","oid"]
   revision = "2704adc878c21e1329f46f6e56a1c387d788ff94"
 
 [[projects]]
@@ -81,6 +104,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0f947a9b743865098a3c130ecdcfd2d096308b2fc261e28fea179e1deedb769a"
+  inputs-digest = "4f1b9ce5d25cc5d1ef3403aaca9cba325667d37d0fea363dc7de1a8e9f1300c0"
   solver-name = "gps-cdcl"
   solver-version = 1
