@@ -11,7 +11,9 @@ You would also need `dep` and `goimports` installed and available in your PATH.
 You can follow the instructions on https://github.com/golang/dep and
 https://godoc.org/golang.org/x/tools/cmd/goimports
 
-Once you have the dependencies you can run this python script:
-$ src/go/BUILD.py
+Once you have the dependencies you can run this python script: `src/go/BUILD.py`
 
+To run unit tests: `src/go/BUILD.py --test`
+
+If you need to clean your workspace: `src/go/BUILD.py --clean`
 

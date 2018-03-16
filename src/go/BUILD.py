@@ -28,6 +28,7 @@ def run(cmd):
 
 parser = argparse.ArgumentParser(description='Go build script')
 parser.add_argument('--clean', action='store_true')
+parser.add_argument('--test', action='store_true')
 parsed_args = parser.parse_args()
 
 if parsed_args.clean:
@@ -80,3 +81,14 @@ for package in rubrik_packages:
             '$PROJECT_ROOT/src/go/src/rubrik/%s`' % package)
 
 print 'Go build done\n'
+
+if parsed_args.test:
+    print '\nRunning unit tests'
+    for package in rubrik_packages:
+        cmd = ['go', 'test', './%s/...' % package]
+        run(cmd)
+        if package == 'sqload':
+            cmd.append('--tags=testserver')
+            run(cmd)
+    print '\All tests passed'
+

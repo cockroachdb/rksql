@@ -926,7 +926,7 @@ func (l *LoadGenTestSuite) TestLoadAgainstGeneratedCorpus() {
 			},
 		},
 		Concurrency:   5,
-		Interval:      duration{time.Duration(100 * time.Millisecond)},
+		Interval:      duration{time.Duration(200 * time.Millisecond)},
 		AsOf:          "",
 		LatencyThresh: "1s",
 		rs:            randsrc.NewRandSrc(),
@@ -956,7 +956,7 @@ func (l *LoadGenTestSuite) TestLoadAgainstGeneratedCorpus() {
 		l.Nil(err)
 		numRows++
 	}
-	l.InDelta(200, totalRows, 30)
+	l.InDelta(100, totalRows, 20)
 
 	workUpdate := WorkLoad{
 		Name: "update",
