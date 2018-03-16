@@ -177,7 +177,6 @@ Example, if you want to run an insert workload to populate 1000 rows and then
 3. Populate 1000 rows using
 ```
 src/go/bin/sqload \
-  --logtostderr \
   cockroach \
   --collect_stats=False \
   --loader_id=0 \
@@ -196,7 +195,6 @@ src/go/bin/sqload \
   step 3.
 ```
 src/go/bin/sqload \
-  --logtostderr \
   cockroach \
   --collect_stats=True \
   --graphite_addr=localhost:2001 \
