@@ -1,6 +1,9 @@
 # rksql
 
 Correctness and performance testing tools for distributed SQL databases.
+These tools can be found in [sqlapp](https://github.com/scaledata/rksql/tree/master/src/go/src/rubrik/sqlapp)
+and [sqload](https://github.com/scaledata/rksql/tree/master/src/go/src/rubrik/sqload)
+respectively, where you will find further details.
 
 ### Build
 
