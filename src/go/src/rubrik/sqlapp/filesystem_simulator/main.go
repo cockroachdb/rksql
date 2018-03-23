@@ -194,7 +194,7 @@ func execOneRow(
 	if n, err = res.RowsAffected(); err != nil {
 		return err
 	} else if n != 1 {
-		return fmt.Errorf("%s affected %d rows, expected 1", msgPrefix, res.RowsAffected)
+		return fmt.Errorf("%s affected %d rows, expected 1", msgPrefix, n)
 	}
 	return nil
 }
@@ -457,7 +457,7 @@ func printDirectoriesRecursive(
 	}
 	sort.Strings(childNames)
 	fmt.Println(path)
-	fmt.Println(childNames, "\n")
+	fmt.Print(childNames, "\n\n")
 
 	for _, childName := range childNames {
 		childUUID := childMap[childName]
