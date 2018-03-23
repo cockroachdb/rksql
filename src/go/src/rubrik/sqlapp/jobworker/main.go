@@ -106,38 +106,9 @@ func main() {
 			*cockroachIPAddressesCSV,
 		)
 	}
-	if *durationSecs <= 0 {
-		flag.PrintDefaults()
-		log.Fatalf(ctx, "Duration of test must be greater than 0: %v", *durationSecs)
-	}
 	if *workerIndex < 0 {
 		flag.PrintDefaults()
 		log.Fatalf(ctx, "Worker index must be greater than or equal to 0: %v", *workerIndex)
-	}
-	if *workerIndex >= *numWorkers {
-		flag.PrintDefaults()
-		log.Fatalf(
-			ctx,
-			"Worker index must be less than numWorkers. workerIndex: %v numWorkers: %v",
-			*workerIndex,
-			*numWorkers,
-		)
-	}
-	if *numJobsPerWorker <= 0 {
-		flag.PrintDefaults()
-		log.Fatalf(
-			ctx,
-			"Num jobs per worker must be greater than 0: %v",
-			*numJobsPerWorker,
-		)
-	}
-	if *jobPeriodScaleMillis <= 0 {
-		flag.PrintDefaults()
-		log.Fatalf(
-			ctx,
-			"Scale of period for jobs must be greater than 0: %v",
-			*jobPeriodScaleMillis,
-		)
 	}
 
 	cockroachIPAddrStrs := strings.Split(*cockroachIPAddressesCSV, ",")
@@ -170,10 +141,41 @@ func main() {
 		db.LogMode(true)
 		db.DB().SetMaxOpenConns(2 * workerPoolSize)
 	}
+
 	db := dbs[0]
 	if *installSchema {
 		job.CreateSchema(db)
 	} else {
+		if *durationSecs <= 0 {
+			flag.PrintDefaults()
+			log.Fatalf(ctx, "Duration of test must be greater than 0: %v", *durationSecs)
+		}
+		if *workerIndex >= *numWorkers {
+			flag.PrintDefaults()
+			log.Fatalf(
+				ctx,
+				"Worker index must be less than numWorkers. workerIndex: %v numWorkers: %v",
+				*workerIndex,
+				*numWorkers,
+			)
+		}
+		if *numJobsPerWorker <= 0 {
+			flag.PrintDefaults()
+			log.Fatalf(
+				ctx,
+				"Num jobs per worker must be greater than 0: %v",
+				*numJobsPerWorker,
+			)
+		}
+		if *jobPeriodScaleMillis <= 0 {
+			flag.PrintDefaults()
+			log.Fatalf(
+				ctx,
+				"Scale of period for jobs must be greater than 0: %v",
+				*jobPeriodScaleMillis,
+			)
+		}
+
 		testWorkersRunning := sync.WaitGroup{}
 		testWorkersRunning.Add(1)
 		currTime := time.Now().UnixNano()
