@@ -33,11 +33,13 @@ func main() {
 	}()
 	var err error
 
-	cockroachSocketAddrsCSV :=
+	cockroachIPAddressesCSV :=
 		flag.String(
-			job.CockroachSocketAddrsCSV,
-			"",
-			"Comma-separated list of socket addresses of cockroach nodes that workers can use.",
+			sqlapp.CockroachIPAddressesCSV,
+			"localhost",
+			"Comma-separated list of CockroachDb nodes' IP addresses."+
+				" The IP addresses can optionally have ports specified in the "+
+				"format <ip1>:<port1>,<ip2>:<port2>",
 		)
 	durationSecs :=
 		flag.Int(
@@ -76,12 +78,12 @@ func main() {
 		flag.PrintDefaults()
 		log.Fatalf(ctx, "Received error while parsing flags: %v", err)
 	}
-	if len(*cockroachSocketAddrsCSV) <= 0 {
+	if len(*cockroachIPAddressesCSV) <= 0 {
 		flag.PrintDefaults()
 		log.Fatalf(
 			ctx,
 			"Must supply at least one cockroach socket address: %v",
-			*cockroachSocketAddrsCSV,
+			*cockroachIPAddressesCSV,
 		)
 	}
 	if *durationSecs <= 0 {
@@ -113,13 +115,14 @@ func main() {
 		log.Fatalf(ctx, "Num workers must be greater than 0: %v", *numWorkers)
 	}
 
-	cockroachSocketAddrStrs := strings.Split(*cockroachSocketAddrsCSV, ",")
-	cockroachSocketAddrs := make([]crdbutil.SocketAddress, len(cockroachSocketAddrStrs))
-	for i, s := range cockroachSocketAddrStrs {
-		cockroachSocketAddrs[i], err = crdbutil.ParseSocketAddress(s)
+	cockroachIPAddrStrs := strings.Split(*cockroachIPAddressesCSV, ",")
+	cockroachSocketAddrs := make([]crdbutil.SocketAddress, len(cockroachIPAddrStrs))
+	for i, s := range cockroachIPAddrStrs {
+		a, err := crdbutil.ParseSocketAddress(s)
 		if err != nil {
-			log.Fatalf(ctx, "Error parsing socket address. s: %v err: %v", s, err)
+			log.Fatal(ctx, err)
 		}
+		cockroachSocketAddrs[i] = a
 	}
 	dbs, err :=
 		sqlutil.GormDBs(

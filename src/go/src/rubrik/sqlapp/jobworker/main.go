@@ -38,11 +38,13 @@ func main() {
 
 	var err error
 
-	cockroachSocketAddrsCSV :=
+	cockroachIPAddressesCSV :=
 		flag.String(
-			job.CockroachSocketAddrsCSV,
-			"",
-			"Comma-separated list of socket addresses of cockroach nodes that workers can use.",
+			sqlapp.CockroachIPAddressesCSV,
+			"localhost",
+			"Comma-separated list of CockroachDb nodes' IP addresses."+
+				" The IP addresses can optionally have ports specified in the "+
+				"format <ip1>:<port1>,<ip2>:<port2>",
 		)
 	durationSecs :=
 		flag.Int(
@@ -95,13 +97,13 @@ func main() {
 
 	flag.Parse()
 	defer log.Flush()
-	if len(*cockroachSocketAddrsCSV) <= 0 {
+	if len(*cockroachIPAddressesCSV) <= 0 {
 		flag.PrintDefaults()
 		log.Fatalf(
 			ctx,
 			"Must provide at least one socket address of a cockroach service. "+
-				"cockroachSocketAddrsCSV: %v",
-			*cockroachSocketAddrsCSV,
+				"cockroachIPAddressesCSV: %v",
+			*cockroachIPAddressesCSV,
 		)
 	}
 	if *durationSecs <= 0 {
@@ -138,16 +140,15 @@ func main() {
 		)
 	}
 
-	cockroachSocketAddrs := strings.Split(*cockroachSocketAddrsCSV, ",")
+	cockroachIPAddrStrs := strings.Split(*cockroachIPAddressesCSV, ",")
 	var socketAddr crdbutil.SocketAddress
 	if *useLocalCockroach {
 		socketAddr = crdbutil.SocketAddress{"localhost", crdbutil.DefaultPort}
 	} else {
 		// TODO: we should also support connecting to multiple socket addresses in a single worker.
-		cockroachSocketAddr := cockroachSocketAddrs[*workerIndex%len(cockroachSocketAddrs)]
-		socketAddr, err = crdbutil.ParseSocketAddress(cockroachSocketAddr)
+		cockroachIPAddrStr := cockroachIPAddrStrs[*workerIndex%len(cockroachIPAddrStrs)]
+		socketAddr, err = crdbutil.ParseSocketAddress(cockroachIPAddrStr)
 	}
-
 	if err != nil {
 		log.Fatal(ctx, err)
 	}
@@ -181,7 +182,7 @@ func main() {
 			ctx,
 			*workerIndex,
 			*numWorkers,
-			len(cockroachSocketAddrs),
+			len(cockroachIPAddrStrs),
 			*numJobsPerWorker,
 			*jobPeriodScaleMillis,
 			workerPoolSize,
