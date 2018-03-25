@@ -33,11 +33,13 @@ func main() {
 	}()
 	var err error
 
-	cockroachSocketAddrsCSV :=
+	cockroachIPAddressesCSV :=
 		flag.String(
-			job.CockroachSocketAddrsCSV,
-			"",
-			"Comma-separated list of socket addresses of cockroach nodes that workers can use.",
+			sqlapp.CockroachIPAddressesCSV,
+			"localhost",
+			"Comma-separated list of CockroachDb nodes' IP addresses."+
+				" The IP addresses can optionally have ports specified in the "+
+				"format <ip1>:<port1>,<ip2>:<port2>",
 		)
 	durationSecs :=
 		flag.Int(
@@ -64,6 +66,12 @@ func main() {
 			0,
 			"Number of workers to run jfl and validation.",
 		)
+	installSchema :=
+		flag.Bool(
+			sqlapp.InstallSchema,
+			false,
+			"Whether to create the schema (used for test mode).",
+		)
 	certsDir := flag.String(
 		sqlapp.CertsDir,
 		"",
@@ -76,50 +84,23 @@ func main() {
 		flag.PrintDefaults()
 		log.Fatalf(ctx, "Received error while parsing flags: %v", err)
 	}
-	if len(*cockroachSocketAddrsCSV) <= 0 {
+	if len(*cockroachIPAddressesCSV) <= 0 {
 		flag.PrintDefaults()
 		log.Fatalf(
 			ctx,
 			"Must supply at least one cockroach socket address: %v",
-			*cockroachSocketAddrsCSV,
+			*cockroachIPAddressesCSV,
 		)
-	}
-	if *durationSecs <= 0 {
-		flag.PrintDefaults()
-		log.Fatalf(
-			ctx,
-			"Duration of test must be greater than 0: %v",
-			*durationSecs,
-		)
-	}
-	if *numJobsPerWorker <= 0 {
-		flag.PrintDefaults()
-		log.Fatalf(
-			ctx,
-			"Num jobs per worker must be greater than 0: %v",
-			*numJobsPerWorker,
-		)
-	}
-	if *jobPeriodScaleMillis <= 0 {
-		flag.PrintDefaults()
-		log.Fatalf(
-			ctx,
-			"Scale of period for jobs must be greater than 0: %v",
-			*jobPeriodScaleMillis,
-		)
-	}
-	if *numWorkers <= 0 {
-		flag.PrintDefaults()
-		log.Fatalf(ctx, "Num workers must be greater than 0: %v", *numWorkers)
 	}
 
-	cockroachSocketAddrStrs := strings.Split(*cockroachSocketAddrsCSV, ",")
-	cockroachSocketAddrs := make([]crdbutil.SocketAddress, len(cockroachSocketAddrStrs))
-	for i, s := range cockroachSocketAddrStrs {
-		cockroachSocketAddrs[i], err = crdbutil.ParseSocketAddress(s)
+	cockroachIPAddrStrs := strings.Split(*cockroachIPAddressesCSV, ",")
+	cockroachSocketAddrs := make([]crdbutil.SocketAddress, len(cockroachIPAddrStrs))
+	for i, s := range cockroachIPAddrStrs {
+		a, err := crdbutil.ParseSocketAddress(s)
 		if err != nil {
-			log.Fatalf(ctx, "Error parsing socket address. s: %v err: %v", s, err)
+			log.Fatal(ctx, err)
 		}
+		cockroachSocketAddrs[i] = a
 	}
 	dbs, err :=
 		sqlutil.GormDBs(
@@ -128,40 +109,71 @@ func main() {
 			job.DefaultDatabaseName,
 			*certsDir,
 			*insecure,
-			false,
+			!*installSchema,
 		)
 	if err != nil {
 		log.Fatalf(ctx, "Error creating dbs. err: %v", err)
 	}
-	workerPoolSize := 32
+	workerPoolSize := 128
 	for _, db := range dbs {
 		db.SingularTable(true)
 		db.LogMode(true)
 		db.DB().SetMaxOpenConns(2 * workerPoolSize)
 	}
-	job.CreateSchema(dbs[0])
 
-	testWorkersRunning := sync.WaitGroup{}
-	testWorkersRunning.Add(*numWorkers)
-	currTime := time.Now().UnixNano()
-	testDuration := int64(*durationSecs) * int64(time.Second)
+	if *installSchema {
+		job.CreateSchema(dbs[0])
+	} else {
+		if *durationSecs <= 0 {
+			flag.PrintDefaults()
+			log.Fatalf(
+				ctx,
+				"Duration of test must be greater than 0: %v",
+				*durationSecs,
+			)
+		}
+		if *numJobsPerWorker <= 0 {
+			flag.PrintDefaults()
+			log.Fatalf(
+				ctx,
+				"Num jobs per worker must be greater than 0: %v",
+				*numJobsPerWorker,
+			)
+		}
+		if *jobPeriodScaleMillis <= 0 {
+			flag.PrintDefaults()
+			log.Fatalf(
+				ctx,
+				"Scale of period for jobs must be greater than 0: %v",
+				*jobPeriodScaleMillis,
+			)
+		}
+		if *numWorkers <= 0 {
+			flag.PrintDefaults()
+			log.Fatalf(ctx, "Num workers must be greater than 0: %v", *numWorkers)
+		}
 
-	for i := 0; i < *numWorkers; i++ {
-		go job.RunTestWorker(
-			ctx,
-			i,
-			*numWorkers,
-			len(dbs),
-			*numJobsPerWorker,
-			*jobPeriodScaleMillis,
-			workerPoolSize,
-			currTime,
-			testDuration,
-			dbs[i%len(cockroachSocketAddrs)],
-			&testWorkersRunning,
-		)
+		testWorkersRunning := sync.WaitGroup{}
+		testWorkersRunning.Add(*numWorkers)
+		currTime := time.Now().UnixNano()
+		testDuration := int64(*durationSecs) * int64(time.Second)
+		for i := 0; i < *numWorkers; i++ {
+			go job.RunTestWorker(
+				ctx,
+				i,
+				*numWorkers,
+				len(dbs),
+				*numJobsPerWorker,
+				*jobPeriodScaleMillis,
+				workerPoolSize,
+				currTime,
+				testDuration,
+				dbs[i%len(cockroachSocketAddrs)],
+				&testWorkersRunning,
+			)
+		}
+		log.Infof(ctx, "Waiting for test workers to complete.")
+		testWorkersRunning.Wait()
+		log.Infof(ctx, "Test workers have completed.")
 	}
-	log.Infof(ctx, "Waiting for test workers to complete.")
-	testWorkersRunning.Wait()
-	log.Infof(ctx, "Test workers have completed.")
 }

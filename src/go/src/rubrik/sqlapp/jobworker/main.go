@@ -38,11 +38,13 @@ func main() {
 
 	var err error
 
-	cockroachSocketAddrsCSV :=
+	cockroachIPAddressesCSV :=
 		flag.String(
-			job.CockroachSocketAddrsCSV,
-			"",
-			"Comma-separated list of socket addresses of cockroach nodes that workers can use.",
+			sqlapp.CockroachIPAddressesCSV,
+			"localhost",
+			"Comma-separated list of CockroachDb nodes' IP addresses."+
+				" The IP addresses can optionally have ports specified in the "+
+				"format <ip1>:<port1>,<ip2>:<port2>",
 		)
 	durationSecs :=
 		flag.Int(
@@ -95,59 +97,29 @@ func main() {
 
 	flag.Parse()
 	defer log.Flush()
-	if len(*cockroachSocketAddrsCSV) <= 0 {
+	if len(*cockroachIPAddressesCSV) <= 0 {
 		flag.PrintDefaults()
 		log.Fatalf(
 			ctx,
 			"Must provide at least one socket address of a cockroach service. "+
-				"cockroachSocketAddrsCSV: %v",
-			*cockroachSocketAddrsCSV,
+				"cockroachIPAddressesCSV: %v",
+			*cockroachIPAddressesCSV,
 		)
-	}
-	if *durationSecs <= 0 {
-		flag.PrintDefaults()
-		log.Fatalf(ctx, "Duration of test must be greater than 0: %v", *durationSecs)
 	}
 	if *workerIndex < 0 {
 		flag.PrintDefaults()
 		log.Fatalf(ctx, "Worker index must be greater than or equal to 0: %v", *workerIndex)
 	}
-	if *workerIndex >= *numWorkers {
-		flag.PrintDefaults()
-		log.Fatalf(
-			ctx,
-			"Worker index must be less than numWorkers. workerIndex: %v numWorkers: %v",
-			*workerIndex,
-			*numWorkers,
-		)
-	}
-	if *numJobsPerWorker <= 0 {
-		flag.PrintDefaults()
-		log.Fatalf(
-			ctx,
-			"Num jobs per worker must be greater than 0: %v",
-			*numJobsPerWorker,
-		)
-	}
-	if *jobPeriodScaleMillis <= 0 {
-		flag.PrintDefaults()
-		log.Fatalf(
-			ctx,
-			"Scale of period for jobs must be greater than 0: %v",
-			*jobPeriodScaleMillis,
-		)
-	}
 
-	cockroachSocketAddrs := strings.Split(*cockroachSocketAddrsCSV, ",")
+	cockroachIPAddrStrs := strings.Split(*cockroachIPAddressesCSV, ",")
 	var socketAddr crdbutil.SocketAddress
 	if *useLocalCockroach {
 		socketAddr = crdbutil.SocketAddress{"localhost", crdbutil.DefaultPort}
 	} else {
 		// TODO: we should also support connecting to multiple socket addresses in a single worker.
-		cockroachSocketAddr := cockroachSocketAddrs[*workerIndex%len(cockroachSocketAddrs)]
-		socketAddr, err = crdbutil.ParseSocketAddress(cockroachSocketAddr)
+		cockroachIPAddrStr := cockroachIPAddrStrs[*workerIndex%len(cockroachIPAddrStrs)]
+		socketAddr, err = crdbutil.ParseSocketAddress(cockroachIPAddrStr)
 	}
-
 	if err != nil {
 		log.Fatal(ctx, err)
 	}
@@ -169,10 +141,41 @@ func main() {
 		db.LogMode(true)
 		db.DB().SetMaxOpenConns(2 * workerPoolSize)
 	}
+
 	db := dbs[0]
 	if *installSchema {
 		job.CreateSchema(db)
 	} else {
+		if *durationSecs <= 0 {
+			flag.PrintDefaults()
+			log.Fatalf(ctx, "Duration of test must be greater than 0: %v", *durationSecs)
+		}
+		if *workerIndex >= *numWorkers {
+			flag.PrintDefaults()
+			log.Fatalf(
+				ctx,
+				"Worker index must be less than numWorkers. workerIndex: %v numWorkers: %v",
+				*workerIndex,
+				*numWorkers,
+			)
+		}
+		if *numJobsPerWorker <= 0 {
+			flag.PrintDefaults()
+			log.Fatalf(
+				ctx,
+				"Num jobs per worker must be greater than 0: %v",
+				*numJobsPerWorker,
+			)
+		}
+		if *jobPeriodScaleMillis <= 0 {
+			flag.PrintDefaults()
+			log.Fatalf(
+				ctx,
+				"Scale of period for jobs must be greater than 0: %v",
+				*jobPeriodScaleMillis,
+			)
+		}
+
 		testWorkersRunning := sync.WaitGroup{}
 		testWorkersRunning.Add(1)
 		currTime := time.Now().UnixNano()
@@ -181,7 +184,7 @@ func main() {
 			ctx,
 			*workerIndex,
 			*numWorkers,
-			len(cockroachSocketAddrs),
+			len(cockroachIPAddrStrs),
 			*numJobsPerWorker,
 			*jobPeriodScaleMillis,
 			workerPoolSize,

@@ -213,7 +213,7 @@ func (r *replayedLog) printRecursive(uuid string) {
 	sort.Strings(childNames)
 	// TODO change in case of tree structure directory will need path
 	fmt.Println(uuid)
-	fmt.Println(childNames, "\n")
+	fmt.Print(childNames, "\n\n")
 	for _, childUUID := range childUUIDs {
 		if fileTypeDirectory == (r.uuidToFile[childUUID]).typ {
 			r.printRecursive(childUUID)

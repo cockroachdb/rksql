@@ -42,7 +42,9 @@ func main() {
 		flag.String(
 			sqlapp.CockroachIPAddressesCSV,
 			"localhost",
-			"Comma-separated list of CockroachDb nodes' IP addresses",
+			"Comma-separated list of CockroachDb nodes' IP addresses."+
+				" The IP addresses can optionally have ports specified in the "+
+				"format <ip1>:<port1>,<ip2>:<port2>",
 		)
 	numWorkers := flag.Int("num_workers", 5, "Concurrent workers")
 	durationSecs := flag.Int(sqlapp.DurationSecs, 10, "Number of seconds to run each worker")
@@ -60,20 +62,19 @@ func main() {
 	if len(*cockroachIPAddressesCSV) == 0 {
 		log.Fatalf(ctx, "cockroachIPAddressesCSV cannot be empty: %s", *cockroachIPAddressesCSV)
 	}
-	cockroachIPAddresses := strings.Split(*cockroachIPAddressesCSV, ",")
-	var sockAddrs []crdbutil.SocketAddress
-	var dbs []*gorm.DB
-	for _, host := range cockroachIPAddresses {
-		sockAddrs =
-			append(
-				sockAddrs,
-				crdbutil.SocketAddress{Host: host, Port: crdbutil.DefaultPort},
-			)
+	cockroachIPAddrStrs := strings.Split(*cockroachIPAddressesCSV, ",")
+	cockroachSocketAddrs := make([]crdbutil.SocketAddress, len(cockroachIPAddrStrs))
+	for i, s := range cockroachIPAddrStrs {
+		a, err := crdbutil.ParseSocketAddress(s)
+		if err != nil {
+			log.Fatal(ctx, err)
+		}
+		cockroachSocketAddrs[i] = a
 	}
 	dbs, err :=
 		sqlutil.GormDBs(
 			ctx,
-			sockAddrs,
+			cockroachSocketAddrs,
 			databaseName,
 			*certsDir,
 			*insecure,

@@ -20,7 +20,6 @@ import (
 	_ "net/http/pprof"
 
 	"rubrik/sqlapp/job"
-	"rubrik/util/crdbutil"
 	"rubrik/util/log"
 )
 
@@ -106,17 +105,9 @@ func distributedSemaphoreCmd(ctx context.Context, currDir string, args basicArgs
 
 func jobworkerCmd(ctx context.Context, currDir string, args basicArgs) *exec.Cmd {
 	testExe := path.Join(currDir, "jobworker")
-
-	// add port to compute socket addresses
-	socketAddrs := strings.Split(args.cockroachIPAddressesCSV, ",")
-	for i, ip := range socketAddrs {
-		socketAddrs[i] = fmt.Sprintf("%v:%v", ip, crdbutil.DefaultPort)
-	}
-	csv := strings.Join(socketAddrs, ",")
-
 	a := getDefaultArgs(args)
 	a = append(a, fmt.Sprintf("--%s=%v", job.UseLocalCockroach, false))
-	a = append(a, fmt.Sprintf("--%s=%s", job.CockroachSocketAddrsCSV, csv))
+	a = append(a, fmt.Sprintf("--%s=%s", sqlapp.CockroachIPAddressesCSV, args.cockroachIPAddressesCSV))
 	a = append(a, fmt.Sprintf("--%s=%d", sqlapp.NumWorkers, args.numWorkers))
 	a = append(a, fmt.Sprintf("--%s=10", job.NumJobsPerWorker))
 	a = append(a, fmt.Sprintf("--%s=1000", job.JobPeriodScaleMillis))
