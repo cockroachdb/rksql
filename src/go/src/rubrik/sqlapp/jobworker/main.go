@@ -138,7 +138,6 @@ func main() {
 	workerPoolSize := 128
 	for _, db := range dbs {
 		db.SingularTable(true)
-		db.LogMode(true)
 		db.DB().SetMaxOpenConns(2 * workerPoolSize)
 	}
 
