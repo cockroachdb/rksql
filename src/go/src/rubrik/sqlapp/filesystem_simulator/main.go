@@ -692,7 +692,11 @@ func getUUIDToStripes(stripes []stripe) map[string]([]stripe) {
 	return uuidToStripes
 }
 
-func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
+func checkConsistency(
+	ctx context.Context,
+	db *sqlapp.RobustDB,
+	id string,
+) (bool, error) {
 	var stripes []stripe
 	var files []file
 	var childRelations []childRelation
@@ -716,9 +720,11 @@ func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
 		},
 	)
 
+	prefix := fmt.Sprintf("Consistency Test %s:", id)
 	log.Infof(
 		ctx,
-		"Consistency Test sizes :- files - %d, childRelations - %d, stripes - %d\n",
+		"%s sizes :- files - %d, childRelations - %d, stripes - %d\n",
+		prefix,
 		len(files),
 		len(childRelations),
 		len(stripes),
@@ -729,7 +735,7 @@ func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
 	uuidToFile := make(map[string]file)
 	for _, file := range files {
 		if val, exists := uuidToFile[file.uuid]; exists {
-			log.Fatalf(ctx, "%s appears multiple times, previously %v", file.uuid, val)
+			log.Fatalf(ctx, "%s %s appears multiple times, previously %v", prefix, file.uuid, val)
 		}
 
 		if file.typ == fileTypeFile {
@@ -738,7 +744,8 @@ func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
 			if len(uuidToStripes[file.uuid]) != file.size {
 				log.Fatalf(
 					ctx,
-					"File %v: %s num stripes %d != file size %d",
+					"%s File %v: %s num stripes %d != file size %d",
+					prefix,
 					file,
 					file.uuid,
 					len(uuidToStripes[file.uuid]),
@@ -750,7 +757,8 @@ func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
 				if i != stripe.idx {
 					log.Fatalf(
 						ctx,
-						"File %v: %s stripe index %d != %d, stripes - %v",
+						"%s File %v: %s stripe index %d != %d, stripes - %v",
+						prefix,
 						file,
 						file.uuid,
 						stripe.idx,
@@ -771,7 +779,8 @@ func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
 			if parent.typ != fileTypeDirectory {
 				log.Fatalf(
 					ctx,
-					"ChildRelation %v: %s not a directory",
+					"%s ChildRelation %v: %s not a directory",
+					prefix,
 					childRelation,
 					parentUUID,
 				)
@@ -779,7 +788,8 @@ func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
 		} else {
 			log.Fatalf(
 				ctx,
-				"ChildRelation %v: %s parent does not exist in files",
+				"%s ChildRelation %v: %s parent does not exist in files",
+				prefix,
 				childRelation,
 				parentUUID,
 			)
@@ -787,7 +797,8 @@ func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
 		if _, exists := uuidToFile[childUUID]; !exists {
 			log.Fatalf(
 				ctx,
-				"ChildRelation %v: %s child does not exist in files",
+				"%s ChildRelation %v: %s child does not exist in files",
+				prefix,
 				childRelation,
 				childUUID,
 			)
@@ -796,7 +807,8 @@ func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
 		if _, exists := childToParent[childUUID]; exists {
 			log.Fatalf(
 				ctx,
-				"ChildRelation %v: %s appears in multiple parents",
+				"%s ChildRelation %v: %s appears in multiple parents",
+				prefix,
 				childRelation,
 				childUUID,
 			)
@@ -809,10 +821,10 @@ func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
 	for uuid := range uuidToFile {
 		if parentUUID, exists := childToParent[uuid]; !exists {
 			if uuid != getRoot() {
-				log.Fatalf(ctx, "%v is parentless", uuid)
+				log.Fatalf(ctx, "%s %v is parentless", prefix, uuid)
 			}
 		} else if uuid == getRoot() {
-			log.Fatal(ctx, getRoot(), " should not have a parent ", parentUUID)
+			log.Fatalf(ctx, "%s %s should not have a parent %s", prefix, getRoot(), parentUUID)
 		}
 	}
 
@@ -821,7 +833,8 @@ func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
 		if !ok {
 			log.Fatalf(
 				ctx,
-				"File uuid %s corresponding to stripe %d not found",
+				"%s File uuid %s corresponding to stripe %d not found",
+				prefix,
 				stripe.uuid,
 				stripe.idx,
 			)
@@ -976,14 +989,36 @@ func runWorkerLoop(
 	wg *sync.WaitGroup,
 	opLog *opLog,
 ) {
+	defer wg.Done()
 	for i := 0; ; i++ {
+		id := fmt.Sprintf("%d_%d", workerI, i)
 		select {
 		case <-done:
-			wg.Done()
 			log.Flush()
 			return
 		default:
-			runRandomOp(ctx, rd, fmt.Sprintf("%d_%d", workerI, i), opLog)
+			runRandomOp(ctx, rd, id, opLog)
+		}
+	}
+}
+
+func runCheckConsistencyLoop(
+	ctx context.Context,
+	rd *sqlapp.RobustDB,
+	testerI int,
+	done chan struct{},
+	wg *sync.WaitGroup,
+) {
+	defer wg.Done()
+	for i := 0; ; i++ {
+		id := fmt.Sprintf("%d_%d", testerI, i)
+		select {
+		case <-done:
+			return
+		default:
+			if passed, err := checkConsistency(ctx, rd, id); !passed || err != nil {
+				log.Fatalf(ctx, "Consistency failed with error :- %v", err)
+			}
 		}
 	}
 }
@@ -1010,6 +1045,7 @@ func runTest(
 	ctx context.Context,
 	rd *sqlapp.RobustDB,
 	numWorkers int,
+	numCheckers int,
 	durationSecs int,
 ) {
 	opLog := newOpLog()
@@ -1020,19 +1056,18 @@ func runTest(
 		wg.Add(1)
 		go runWorkerLoop(ctx, rd, i, done, &wg, opLog)
 	}
-
-	duration := time.Duration(durationSecs) * time.Second
-	for startTime := time.Now(); time.Since(startTime) < duration; {
-		if passed, err := checkConsistency(ctx, rd); !passed || err != nil {
-			log.Fatalf(ctx, "Consistency failed with error :- %v", err)
-		}
+	for i := 0; i < numCheckers; i++ {
+		wg.Add(1)
+		go runCheckConsistencyLoop(ctx, rd, i, done, &wg)
 	}
+	// Block for the duration of the test.
+	<-time.After(time.Duration(durationSecs) * time.Second)
 	close(done)
 	wg.Wait()
 	log.Infof(ctx, "log size: %d", len(opLog.operations))
 	log.Infof(ctx, "number of ambiguous operations: %d", opLog.ambiguousOps)
 	rd.PrintStats()
-	if passed, err := checkConsistency(ctx, rd); !passed || err != nil {
+	if passed, err := checkConsistency(ctx, rd, "final"); !passed || err != nil {
 		log.Fatalf(ctx, "Consistency failed with error :- %v", err)
 	}
 	checkProgress(ctx, rd, opLog, durationSecs, numWorkers)
@@ -1057,7 +1092,8 @@ func main() {
 		sqlapp.DurationSecs,
 		10,
 		"Duration (in seconds) to run.")
-	numWorkers := flag.Int(sqlapp.NumWorkers, 10, "Concurrent workers")
+	numWorkers := flag.Int(sqlapp.NumWorkers, 16, "Concurrent workers")
+	numCheckers := flag.Int("num checkers", 16, "Concurrent checkers")
 	installSchema := flag.Bool(
 		sqlapp.InstallSchema,
 		false,
@@ -1069,7 +1105,7 @@ func main() {
 	insecure := flag.Bool(sqlapp.Insecure, true, "Connect to CockroachDB in insecure mode")
 	flag.Parse()
 	defer log.Flush()
-	log.Infof(ctx, "numWorkers: %v", *numWorkers)
+	log.Infof(ctx, "numWorkers: %v, numCheckers: %v", *numWorkers, *numCheckers)
 	if len(*cockroachIPAddressesCSV) == 0 {
 		log.Fatalf(ctx, "hostnames cannot be empty: %s", *cockroachIPAddressesCSV)
 	}
@@ -1126,6 +1162,6 @@ func main() {
 				)
 			},
 		)
-		runTest(ctx, rd, *numWorkers, *durationSecs)
+		runTest(ctx, rd, *numWorkers, *numCheckers, *durationSecs)
 	}
 }
