@@ -18,7 +18,7 @@ type logger struct{}
 // private logging interface by duck typing. This is required
 // because gorm uses a private interface to inject the logger.
 func (l *logger) Print(v ...interface{}) {
-	log.Info(context.TODO(), v)
+	log.Info(context.TODO(), v...)
 }
 
 func urls(

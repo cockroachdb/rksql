@@ -609,7 +609,7 @@ func checkProgress(
 	if opLog.ambiguousOps > int(float64(len(opLog.operations))*allowableAmbiguity) {
 		log.Fatalf(
 			ctx,
-			"number of ambiguous Ops - %d, more than allowable Ops - %f",
+			"number of ambiguous Ops - %d, more than allowable Ops - %d",
 			opLog.ambiguousOps,
 			int(float64(len(opLog.operations))*allowableAmbiguity),
 		)
@@ -729,7 +729,7 @@ func checkConsistency(ctx context.Context, db *sqlapp.RobustDB) (bool, error) {
 	uuidToFile := make(map[string]file)
 	for _, file := range files {
 		if val, exists := uuidToFile[file.uuid]; exists {
-			log.Fatalf(ctx, "%s appears multiple (%d) times", file.uuid, val)
+			log.Fatalf(ctx, "%s appears multiple times, previously %v", file.uuid, val)
 		}
 
 		if file.typ == fileTypeFile {

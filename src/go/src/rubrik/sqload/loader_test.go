@@ -197,6 +197,10 @@ func (l *LoadGenTestSuite) TestLoadGenerationWithAQueryThatSelectsNothing() {
 		},
 	)
 
+	// Silence unused warning.
+	_ = rowDeltaMean
+	_ = rowDeltaSd
+
 	l.InDelta(10, queryCount, 3)
 }
 
@@ -266,6 +270,10 @@ func (l *LoadGenTestSuite) TestLoadGenerationWithAQueryThatInsertsRows() {
 			rowDeltaSd = math.Sqrt(float64(rd.sumOfSq) / float64(rd.count))
 		},
 	)
+
+	// Silence unused warning.
+	_ = rowDeltaMean
+	_ = rowDeltaSd
 
 	l.Equal(10, queryCount)
 
@@ -382,6 +390,10 @@ func (l *LoadGenTestSuite) TestLoadGenerationWithATxnThatUpdatesInsertedRows() {
 		},
 	)
 
+	// Silence unused warning.
+	_ = rowDeltaMean
+	_ = rowDeltaSd
+
 	l.Equal(2, queryCount)
 
 	qe, err := l.queryExecutor()
@@ -485,6 +497,10 @@ func (l *LoadGenTestSuite) TestLoadGenerationWithMetaResultParam() {
 			rowDeltaSd = math.Sqrt(float64(rd.sumOfSq) / float64(rd.count))
 		},
 	)
+
+	// Silence unused warning.
+	_ = rowDeltaMean
+	_ = rowDeltaSd
 
 	l.Equal(10, queryCount)
 
@@ -623,6 +639,10 @@ func (l *LoadGenTestSuite) TestLoadGenerationWithResultParams() {
 		},
 	)
 
+	// Silence unused warning.
+	_ = rowDeltaMean
+	_ = rowDeltaSd
+
 	l.Equal(10, queryCount)
 
 	qe, err := l.queryExecutor()
@@ -748,6 +768,10 @@ func (l *LoadGenTestSuite) TestLoadGenerationWithAQueryWithoutResultName() {
 			rowDeltaSd = math.Sqrt(float64(rd.sumOfSq) / float64(rd.count))
 		},
 	)
+
+	// Silence unused warning.
+	_ = rowDeltaMean
+	_ = rowDeltaSd
 
 	l.InDelta(10, queryCount, 3)
 }
