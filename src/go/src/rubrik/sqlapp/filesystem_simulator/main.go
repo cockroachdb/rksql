@@ -583,6 +583,15 @@ func selectStripes(
 	return nil
 }
 
+func selectTxnTimestamp(
+	ctx context.Context,
+	tx *sql.Tx,
+	txnTimestamp *string,
+) error {
+	const stmt = "SELECT cluster_logical_timestamp()::STRING"
+	return tx.QueryRowContext(ctx, stmt).Scan(txnTimestamp)
+}
+
 func checkProgress(
 	ctx context.Context,
 	rd *sqlapp.RobustDB,
@@ -700,6 +709,7 @@ func checkConsistency(
 	var stripes []stripe
 	var files []file
 	var childRelations []childRelation
+	var txnTimestamp string
 	executeTxOrDie(
 		ctx,
 		db,
@@ -716,11 +726,11 @@ func checkConsistency(
 			if err := selectChildRelations(ctx, tx, &childRelations); err != nil {
 				return err
 			}
-			return nil
+			return selectTxnTimestamp(ctx, tx, &txnTimestamp)
 		},
 	)
 
-	prefix := fmt.Sprintf("Consistency Test %s:", id)
+	prefix := fmt.Sprintf("Consistency Test %s @ %s:", id, txnTimestamp)
 	log.Infof(
 		ctx,
 		"%s sizes :- files - %d, childRelations - %d, stripes - %d\n",
