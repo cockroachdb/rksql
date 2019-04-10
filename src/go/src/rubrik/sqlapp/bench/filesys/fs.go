@@ -90,7 +90,7 @@ func New(driverName string, drop bool) (*FS, error) {
 	case "cass":
 		d, err = cass.New(drop)
 	default:
-		return nil, errors.Errorf("Unknown driver ", driverName)
+		return nil, errors.Errorf("Unknown driver %s", driverName)
 	}
 	if err != nil {
 		return nil, err
