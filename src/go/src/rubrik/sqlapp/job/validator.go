@@ -317,7 +317,6 @@ func assertNextPageOfJobsHaveArtifacts(
 		if !hasValidArtifactArr[i] {
 			log.Fatalf(ctx, "no valid artifact found for successful job instance: %v", successes[i])
 		}
-		log.Infof(ctx, "Validated artifact for job instance: %v", successes[i])
 	}
 	if len(instances) < limit {
 		return nil
