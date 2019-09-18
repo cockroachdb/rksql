@@ -2,9 +2,9 @@ package job
 
 import (
 	"context"
-	"time"
-
+	"database/sql"
 	"strings"
+	"time"
 
 	"github.com/jinzhu/gorm"
 
@@ -12,11 +12,7 @@ import (
 )
 
 func shouldRollback(err error) bool {
-	return err != nil &&
-		!strings.Contains(
-			err.Error(),
-			"sql: Transaction has already been committed or rolled back",
-		)
+	return err != nil && !strings.Contains(err.Error(), sql.ErrTxDone.Error())
 }
 
 type txResult int
