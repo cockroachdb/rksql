@@ -1,8 +1,8 @@
-# rksql
+# rksql (fork of scaledata/rksql)
 
 Correctness and performance testing tools for distributed SQL databases.
-These tools can be found in [sqlapp](https://github.com/scaledata/rksql/tree/master/src/go/src/rubrik/sqlapp)
-and [sqload](https://github.com/scaledata/rksql/tree/master/src/go/src/rubrik/sqload)
+These tools can be found in [sqlapp](https://github.com/cockroachdb/rksql/tree/master/src/go/src/rubrik/sqlapp)
+and [sqload](https://github.com/cockroachdb/rksql/tree/master/src/go/src/rubrik/sqload)
 respectively, where you will find further details.
 
 ### Build
@@ -20,3 +20,9 @@ To run unit tests: `src/go/BUILD.py --test`
 
 If you need to clean your workspace: `src/go/BUILD.py --clean`
 
+### Edge Binaries
+
+CockroachDB uses binaries generated through this repo when running the
+scaledata roachtests. It picks them up off of
+https://edge-binaries.cockroachdb.com/. Use `s3-push.sh` to update them
+manually (while we fix things up to run CI here to do so automatically).
