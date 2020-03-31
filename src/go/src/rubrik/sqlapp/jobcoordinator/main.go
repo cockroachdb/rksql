@@ -1,7 +1,5 @@
 package main
 
-import _ "net/http/pprof"
-import _ "net/http"
 import (
 	"context"
 	"flag"
