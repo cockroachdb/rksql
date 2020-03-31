@@ -210,7 +210,7 @@ func openDBAsRoot(
 }
 
 func getUsers(db *sql.DB) ([]string, error) {
-	rows, err := db.Query("SHOW USERS")
+	rows, err := db.Query("SELECT username FROM system.users")
 	if err != nil {
 		return nil, err
 	}
