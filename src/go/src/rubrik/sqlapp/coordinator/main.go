@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/exec"
 	"path"
@@ -13,14 +15,10 @@ import (
 	"time"
 
 	"rubrik/sqlapp"
-
-	_ "github.com/lib/pq"
-
-	"net/http"
-	_ "net/http/pprof"
-
 	"rubrik/sqlapp/job"
 	"rubrik/util/log"
+
+	_ "github.com/lib/pq"
 )
 
 const (
@@ -71,10 +69,7 @@ func getDefaultArgs(args basicArgs) []string {
 	return ret
 }
 
-func appendCockroachIPAddrFlag(
-	workerArgs []string,
-	ipAddrsCSV string,
-) []string {
+func appendCockroachIPAddrFlag(workerArgs []string, ipAddrsCSV string) []string {
 	return append(
 		workerArgs,
 		fmt.Sprintf("--%s=%s", sqlapp.CockroachIPAddressesCSV, ipAddrsCSV),
@@ -185,7 +180,7 @@ func analyzeTestResults(ctx context.Context, results chan testResult) int {
 	log.Info(
 		ctx,
 		"Analysing test results. Please bear in mind that "+
-			"log.Fatal() causes process to exit with status 255",
+			"log.Fatal() causes process to exit with status 1",
 	)
 	for result := range results {
 		if result.err != nil {
