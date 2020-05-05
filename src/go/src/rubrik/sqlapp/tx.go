@@ -12,19 +12,21 @@ import (
 	"sync/atomic"
 	"time"
 
+	"rubrik/util/log"
+
 	"github.com/cockroachdb/cockroach-go/crdb"
 	"github.com/codahale/hdrhistogram"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
-
-	"rubrik/util/log"
 )
 
 type gormTx struct {
 	gormDB *gorm.DB
 }
 
-func (db *gormTx) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (db *gormTx) ExecContext(
+	ctx context.Context, query string, args ...interface{},
+) (sql.Result, error) {
 	// NOTE: context is ignored.
 	return nil, db.gormDB.Exec(query, args).Error
 }
@@ -104,11 +106,7 @@ func newRobustDB(fn func(error) bool, args ...interface{}) *RobustDB {
 // *gorm.DB and fn as retryable function, optionally third argument Max duration for
 // retries and fourth argument minimum sleep time between retries can be specified.
 // Sleep time will increase exponentially between retries.
-func NewRobustDB(
-	dbs []*gorm.DB,
-	fn func(error) bool,
-	args ...interface{},
-) *RobustDB {
+func NewRobustDB(dbs []*gorm.DB, fn func(error) bool, args ...interface{}) *RobustDB {
 	rd := newRobustDB(fn, args...)
 	rd.gormDBs = dbs
 	log.Infof(context.TODO(), "NewRobustDB with pool of size %d", len(dbs))
@@ -121,11 +119,7 @@ func NewRobustDB(
 
 // NewRobustSQLDB is similar to NewRobustDB except its dbs are *sql.DB instead
 // of *gorm.DB.
-func NewRobustSQLDB(
-	dbs []*sql.DB,
-	fn func(error) bool,
-	args ...interface{},
-) *RobustDB {
+func NewRobustSQLDB(dbs []*sql.DB, fn func(error) bool, args ...interface{}) *RobustDB {
 	rd := newRobustDB(fn, args...)
 	rd.sqlDBs = dbs
 	log.Infof(context.TODO(), "NewRobustSQLDB with pool of size %d", len(dbs))
@@ -294,10 +288,7 @@ func (rd *RobustDB) ExecuteTx(fn func(*gorm.DB) error) error {
 
 // ExecuteSQLTx is similar to ExecuteTx but takes a sql transaction instead of
 // a GORM transaction.
-func (rd *RobustDB) ExecuteSQLTx(
-	ctx context.Context,
-	fn func(*sql.Tx) error,
-) error {
+func (rd *RobustDB) ExecuteSQLTx(ctx context.Context, fn func(*sql.Tx) error) error {
 	return rd.retry(
 		func() error {
 			db := rd.RandomSQLDB(ctx)
@@ -361,6 +352,7 @@ func RetryOnConnectionError(err error) bool {
 	default:
 		if e == driver.ErrBadConn ||
 			e == io.EOF ||
+			e == io.ErrUnexpectedEOF ||
 			e == pq.ErrSSLNotSupported {
 			return true
 		}

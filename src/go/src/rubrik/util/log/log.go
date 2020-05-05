@@ -26,12 +26,12 @@ func Errorf(ctx context.Context, format string, args ...interface{}) {
 
 func Fatalf(ctx context.Context, format string, args ...interface{}) {
 	log.Printf(format, args...)
-	os.Exit(255)
+	os.Exit(1)
 }
 
 func Fatal(ctx context.Context, args ...interface{}) {
 	log.Print(args...)
-	os.Exit(255)
+	os.Exit(1)
 }
 
 func V(depth int) bool {
